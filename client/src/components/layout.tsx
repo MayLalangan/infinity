@@ -11,7 +11,11 @@ import {
   Upload,
   Camera,
   TrendingUp,
-  X
+  X,
+  ChevronDown,
+  ChevronRight,
+  Settings,
+  HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -187,119 +191,193 @@ export function Layout({ children }: { children: React.ReactNode }) {
     }}>
       {/* Header */}
       <header className="sticky top-0 z-40 w-full border-b shadow-sm" style={{ background: 'linear-gradient(to right, #001f3f, #005A9E)' }}>
-        <div className="w-full flex h-16 items-center justify-between px-4 md:px-6">
+        <div className="w-full flex h-20 items-center justify-between px-4 md:px-6">
           {/* Left Side - Company Logo */}
-          <div className="flex items-center gap-3">
-            <img src="/images/logo.png" alt="Company Logo" className="h-10 object-contain" />
-          </div>
+          <Link href="/" className="flex items-center gap-3 hover:opacity-90 active:scale-95 transition-all group">
+            <img src="/images/logo.png" alt="Company Logo" className="h-10 object-contain group-hover:rotate-3 transition-transform duration-300" />
+
+          </Link>
 
           {/* Center Navigation - Hidden on mobile */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium absolute left-1/2 transform -translate-x-1/2">
-            <Link href="/" className={cn("transition-colors", location === '/' ? "text-white font-semibold" : "text-white/70 hover:text-[#7acc00]")}>
-              Training Modules
+          <nav className="hidden md:flex items-center gap-12 absolute left-1/2 transform -translate-x-1/2 font-sans text-sm">
+            <Link href="/" className={cn(
+              "relative group py-3 px-4 flex items-center transition-colors",
+              location === '/' ? "text-white font-bold" : "text-white/80 font-medium hover:text-white"
+            )}>
+              <span>Training Modules</span>
+              <span className={cn(
+                "absolute -bottom-1 left-0 w-full h-[2px] bg-[#7acc00] transform transition-transform duration-300 origin-left",
+                location === '/' ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+              )} />
             </Link>
-            <Link href="/progress" className={cn("transition-colors", location === '/progress' ? "text-white font-semibold" : "text-white/70 hover:text-[#7acc00]")}>
-              Progress Overview
+            
+            <Link href="/progress" className={cn(
+              "relative group py-3 px-4 flex items-center transition-colors",
+              location === '/progress' ? "text-white font-bold" : "text-white/80 font-medium hover:text-white"
+            )}>
+              <span>Progress Overview</span>
+              <span className={cn(
+                "absolute -bottom-1 left-0 w-full h-[2px] bg-[#7acc00] transform transition-transform duration-300 origin-left",
+                location === '/progress' ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+              )} />
             </Link>
+
             {currentUser.role === 'admin' && (
-              <Link href="/admin" className={cn("transition-colors", location === '/admin' ? "text-white font-semibold" : "text-white/70 hover:text-[#7acc00]")}>
-                Admin Panel
+              <Link href="/admin" className={cn(
+                "relative group py-3 px-4 flex items-center transition-colors",
+                location === '/admin' ? "text-white font-bold" : "text-white/80 font-medium hover:text-white"
+              )}>
+                <span>Admin Panel</span>
+                <span className={cn(
+                  "absolute -bottom-1 left-0 w-full h-[2px] bg-[#7acc00] transform transition-transform duration-300 origin-left",
+                  location === '/admin' ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                )} />
               </Link>
             )}
           </nav>
 
           {/* Right Side - User Profile and Action Buttons */}
           <div className="flex items-center gap-2">
-            {/* User Profile */}
-            <div className="flex items-center gap-3">
-              <div className="relative group">
-                <img 
-                  src={displayUser.avatar} 
-                  alt={displayUser.name} 
-                  className={cn(
-                    "h-10 w-10 rounded-full ring-2 ring-primary/20",
-                    !viewAsUser && "cursor-pointer hover:ring-4 hover:ring-[#7acc00] transition-all"
-                  )}
-                  onClick={handleAvatarClick}
-                />
-                {!viewAsUser && (
-                  <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                    onClick={handleAvatarClick}
-                  >
-                    <Camera className="h-5 w-5 text-white" />
-                  </div>
-                )}
-              </div>
-              <div className="hidden sm:flex flex-col">
-                <p className="font-medium leading-none text-sm text-white">
-                  {displayUser.name}
-                  {viewAsUser && <span className="text-xs text-white/80 ml-2">(viewing)</span>}
-                </p>
-                <p className="text-xs text-white/80 capitalize">{displayUser.role}</p>
-              </div>
-            </div>
-            
-            <div className="h-8 w-px bg-white/20 mx-1" />
-            {currentUser.role === 'admin' && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" title="View as User">
-                    <Users className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>View as User</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {users.map(user => (
-                    <DropdownMenuItem
-                      key={user.id}
-                      onClick={() => handleViewAsUser(user)}
-                      className="flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2">
-                        <img src={user.avatar} alt={user.name} className="h-6 w-6 rounded-full" />
-                        <span>{user.name}</span>
-                      </div>
-                      {(viewAsUser?.id === user.id || (!viewAsUser && user.id === currentUser.id)) && (
-                        <Check className="h-4 w-4" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-3 pl-2 pr-2 h-auto py-1 hover:bg-white/10 text-white data-[state=open]:bg-white/10 border-0 focus:ring-0">
+                   <div className="relative h-9 w-9">
+                      <img 
+                        src={displayUser.avatar} 
+                        alt={displayUser.name} 
+                        className={cn(
+                          "h-9 w-9 rounded-full ring-2 ring-white/20 transition-all object-cover",
+                          viewAsUser && "ring-amber-400"
+                        )}
+                      />
+                      {viewAsUser && (
+                        <div className="absolute -bottom-1 -right-1 bg-amber-400 rounded-full p-0.5 border-2 border-[#005A9E]">
+                          <Users className="h-2 w-2 text-black" />
+                        </div>
                       )}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                   </div>
+                   
+                   <div className="hidden md:flex flex-col items-start gap-0.5">
+                     <span className="text-sm font-semibold leading-none">{displayUser.name}</span>
+                     <span className="text-[10px] text-white/70 font-medium uppercase tracking-wider">{displayUser.role}</span>
+                   </div>
+                   
+                   <ChevronDown className="h-4 w-4 text-white/50 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 p-2">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{displayUser.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{displayUser.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem onClick={handleAvatarClick} className="gap-2 cursor-pointer">
+                  <Camera className="h-4 w-4 text-muted-foreground" />
+                  <span>Update Photo</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem className="gap-2 cursor-pointer">
+                   <Settings className="h-4 w-4 text-muted-foreground" />
+                   <span>Settings</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem className="gap-2 cursor-pointer">
+                   <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                   <span>Help & Support</span>
+                </DropdownMenuItem>
 
-            <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
-              <LogOut className="h-4 w-4" />
-            </Button>
+                {currentUser.role === 'admin' && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Admin Controls</DropdownMenuLabel>
+                    <DropdownMenuItem asChild>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span>View As User</span>
+                          </div>
+                          <ChevronRight className="h-4 w-4 opacity-50" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent side="left" className="w-56 p-2">
+                          {users.map(user => (
+                            <DropdownMenuItem
+                              key={user.id}
+                              onClick={() => handleViewAsUser(user)}
+                              className="gap-2 cursor-pointer"
+                            >
+                              <img src={user.avatar} className="h-5 w-5 rounded-full" />
+                              <span className="flex-1 truncate">{user.name}</span>
+                              {(viewAsUser?.id === user.id || (!viewAsUser && user.id === currentUser.id)) && (
+                                <Check className="h-3 w-3 text-green-600" />
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem onClick={handleLogout} className="gap-2 text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">
+                  <LogOut className="h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Mobile Menu */}
             <div className="md:hidden">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
                     <Menu className="h-5 w-5" />
                     <span className="sr-only">Toggle menu</span>
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[240px] sm:w-[300px]">
-                  <nav className="flex flex-col gap-4 mt-8">
-                    <Link href="/" className="text-lg font-medium hover:text-secondary">
+                  <nav className="flex flex-col gap-2 mt-8">
+                    <Link href="/" className={cn(
+                      "text-lg py-2 transition-all",
+                      location === '/' 
+                        ? "font-bold text-blue-900 pl-3 border-l-4 border-[#7acc00]" 
+                        : "font-medium text-gray-600 hover:text-blue-600 pl-4"
+                    )}>
                       Training Modules
                     </Link>
-                    <Link href="/progress" className="text-lg font-medium hover:text-secondary">
+                    <Link href="/progress" className={cn(
+                      "text-lg py-2 transition-all",
+                      location === '/progress' 
+                        ? "font-bold text-blue-900 pl-3 border-l-4 border-[#7acc00]" 
+                        : "font-medium text-gray-600 hover:text-blue-600 pl-4"
+                    )}>
                       Progress Overview
                     </Link>
                     {currentUser.role === 'admin' && (
-                      <Link href="/admin" className="text-lg font-medium hover:text-secondary">
+                      <Link href="/admin" className={cn(
+                        "text-lg py-2 transition-all",
+                        location === '/admin' 
+                          ? "font-bold text-blue-900 pl-3 border-l-4 border-[#7acc00]" 
+                          : "font-medium text-gray-600 hover:text-blue-600 pl-4"
+                      )}>
                         Admin Panel
                       </Link>
                     )}
+                    <div className="h-px bg-gray-100 my-4" />
+                    <button onClick={handleLogout} className="text-lg font-medium text-red-600 hover:text-red-700 text-left pl-4">
+                      Log Out
+                    </button>
                   </nav>
                 </SheetContent>
               </Sheet>
             </div>
           </div>
+
         </div>
       </header>
 

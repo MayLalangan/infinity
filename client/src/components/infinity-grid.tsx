@@ -118,38 +118,45 @@ export function InfinityGrid({ topics, onEdit }: InfinityGridProps) {
              <div key={topic.id} className="relative group">
                <Link href={`/topic/${topic.id}`}>
                  <div className={cn(
-                   "h-full relative bg-white rounded-2xl transition-all duration-300 p-6 flex flex-col gap-5 cursor-pointer overflow-hidden group-hover:-translate-y-1",
+                   "h-full relative bg-white rounded-2xl transition-all duration-300 ease-out p-6 flex flex-col gap-5 cursor-pointer overflow-hidden transform",
+                   // Hover: Lift & Glow
+                   "hover:-translate-y-2 hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)]",
+                   // Click: Zoom/Focus
+                   "active:scale-[0.98]",
                    // Gradient Overlay
                    "bg-gradient-to-b from-white to-gray-50/30",
                    // Border logic
-                   state === 'completed' ? "border border-[#7acc00] ring-1 ring-[#7acc00]" : 
-                   state === 'in-progress' ? "border border-blue-200 ring-4 ring-blue-50/50" : 
-                   "border border-gray-200"
+                   state === 'completed' ? "border border-[#7acc00] ring-1 ring-[#7acc00] hover:shadow-[#7acc00]/20" : 
+                   state === 'in-progress' ? "border border-blue-200 ring-4 ring-blue-50/50 hover:border-blue-400 hover:shadow-blue-500/20" : 
+                   "border border-gray-200 hover:border-blue-300 hover:shadow-blue-900/10"
                  )}>
                    
                     {/* Header: Icon & Status Badge */}
                     <div className="flex justify-between items-start">
-                      <div className={cn("p-3 rounded-xl transition-all duration-300", iconBgClass)}>
+                      <div className={cn(
+                        "p-3 rounded-xl transition-all duration-500 ease-in-out group-hover:scale-110 group-hover:rotate-3",
+                        iconBgClass
+                      )}>
                         <IconComponent className={cn("w-6 h-6", iconColorClass)} />
                       </div>
                       
                       {/* Status Badges */}
                       {state === 'completed' && (
-                        <div className="flex items-center gap-1.5 bg-[#7acc00]/10 text-[#7acc00] px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
+                        <div className="flex items-center gap-1.5 bg-[#5c9900]/10 text-[#5c9900] px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>Done</span>
                         </div>
                       )}
                       
                       {state === 'in-progress' && (
-                        <div className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
+                        <div className="flex items-center gap-1.5 bg-blue-50 text-blue-800 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
                           <Clock className="w-3.5 h-3.5" />
                           <span>In Progress</span>
                         </div>
                       )}
                       
                       {state === 'not-started' && (
-                         <div className="flex items-center gap-1.5 text-gray-400 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border border-gray-200">
+                         <div className="flex items-center gap-1.5 text-gray-400 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border border-gray-200 group-hover:border-gray-300 transition-colors">
                            <Circle className="w-3.5 h-3.5" />
                          </div>
                       )}
@@ -187,8 +194,8 @@ export function InfinityGrid({ topics, onEdit }: InfinityGridProps) {
                     </div>
 
                     {/* Hover Arrow Effect */}
-                    <div className="absolute bottom-6 right-6 opacity-0 transform translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                      <ArrowRight className="w-5 h-5 text-gray-400" />
+                    <div className="absolute bottom-6 right-6 opacity-0 transform translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out">
+                      <ArrowRight className="w-5 h-5 text-blue-600" />
                     </div>
                  </div>
                </Link>
