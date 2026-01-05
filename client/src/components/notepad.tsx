@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { X, Save, Image as ImageIcon, Maximize2, Minimize2, Paperclip, FileText } from 'lucide-react';
+import { X, Save, Image as ImageIcon, Maximize2, Minimize2, Paperclip, FileText, Pencil, Highlighter, ChevronDown, Eraser, Check, Cloud } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 interface DrawingImage {
@@ -44,8 +44,12 @@ export function Notepad({ title, content, onClose, mode, onSubmit }: NotepadProp
   const [zoom, setZoom] = useState(1);
   const [showDrawing, setShowDrawing] = useState(false);
   const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [isLined, setIsLined] = useState(true);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -54,11 +58,46 @@ export function Notepad({ title, content, onClose, mode, onSubmit }: NotepadProp
   const startPointRef = useRef({ x: 0, y: 0 });
   const markerPointsRef = useRef<Array<{x: number, y: number}>>([]);
 
-  // Auto-save to localStorage
+  // Auto-save to localStorage with status feedback
   useEffect(() => {
-    const saveData = { text, drawings, images };
-    localStorage.setItem(`notepad_${title}`, JSON.stringify(saveData));
+    setSaveStatus('saving');
+    const timer = setTimeout(() => {
+      const saveData = { text, drawings, images };
+      localStorage.setItem(`notepad_${title}`, JSON.stringify(saveData));
+      setSaveStatus('saved');
+      setLastSavedTime(new Date());
+    }, 800); // Debounce save
+    return () => clearTimeout(timer);
   }, [text, drawings, images, title]);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      // Check file type/size if needed?
+      setAttachment(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleClose = () => {
+    const hasContent = text.trim().length > 0 || attachment || drawings.length > 0;
+    if (hasContent && confirm("You have unsubmitted changes. Close anyway? Your notes are saved to drafts.")) {
+      onClose();
+    } else if (!hasContent) {
+      onClose();
+    }
+  };
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -118,6 +157,10 @@ export function Notepad({ title, content, onClose, mode, onSubmit }: NotepadProp
     
     ctx.restore();
   };
+
+  useEffect(() => {
+    redrawCanvas();
+  }, [drawings, images, zoom]);
 
   const drawStrokeOnCanvas = (ctx: CanvasRenderingContext2D, stroke: DrawingStroke | Partial<DrawingStroke>) => {
     if (!stroke.startX || stroke.startY === undefined || !stroke.endX || stroke.endY === undefined) return;
@@ -206,7 +249,7 @@ export function Notepad({ title, content, onClose, mode, onSubmit }: NotepadProp
         endX: x,
         endY: y,
         thickness: drawThickness,
-        points: startPointRef.current,
+        points: [startPointRef.current],
       });
     }
   };
@@ -242,7 +285,7 @@ export function Notepad({ title, content, onClose, mode, onSubmit }: NotepadProp
         endX: x,
         endY: y,
         thickness: drawThickness,
-        points: startPointRef.current,
+        points: [startPointRef.current],
       };
       setDrawings([...drawings, newStroke]);
     }
@@ -307,15 +350,28 @@ export function Notepad({ title, content, onClose, mode, onSubmit }: NotepadProp
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-32 h-8 bg-yellow-100/80 rotate-[-2deg] shadow-sm z-10 border border-yellow-200/50" />
 
         {/* Notepad Header */}
-        <div className="bg-red-100/50 p-4 border-b border-red-200 flex justify-between items-center">
-          <h2 className="font-hand text-2xl font-bold text-red-900/80">{title}</h2>
-          <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-red-200/50 rounded-full">
-            <X className="w-6 h-6 text-red-800" />
+        <div className="bg-slate-50/95 p-5 border-b border-slate-200 flex justify-between items-start">
+          <div>
+             <h2 className="font-hand text-2xl font-bold text-slate-900">{title}</h2>
+             <p className="text-xs text-slate-500 mt-1 font-sans">Personal notes & reflections (visible only to you)</p>
+          </div>
+          <Button variant="ghost" size="icon" onClick={handleClose} className="hover:bg-slate-200/50 rounded-full h-10 w-10 -mr-2">
+            <X className="w-6 h-6 text-slate-400 hover:text-slate-700 transition-colors" />
           </Button>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto flex flex-col gap-4 p-6 notepad-paper" ref={contentRef}>
+        <div 
+          className={cn(
+            "flex-1 overflow-y-auto flex flex-col gap-4 p-6 transition-colors", 
+            isLined && "notepad-paper",
+            isDraggingOver && "bg-blue-50/50 outline-2 outline-dashed outline-blue-300 -outline-offset-4"
+          )} 
+          ref={contentRef}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           {mode === 'read' ? (
             <div className="prose prose-sm max-w-none font-hand">
               {content?.split('\n').map((line, i) => (
@@ -327,36 +383,68 @@ export function Notepad({ title, content, onClose, mode, onSubmit }: NotepadProp
           ) : (
             <>
               {/* TEXT SECTION - Always visible */}
-              <div className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col relative group">
+                <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setIsLined(!isLined)}
+                    className="h-6 text-xs text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                  >
+                    {isLined ? "Hide Lines" : "Show Lines"}
+                  </Button>
+                </div>
                 <Textarea 
-                  placeholder="Type your notes, observations, and reflections..." 
-                  className="flex-1 bg-transparent border-none shadow-none resize-none focus-visible:ring-0 p-0 text-lg font-hand leading-loose placeholder:text-slate-400 text-black"
+                  placeholder={"Prompts for reflection:\n• What steps should you remember in an emergency?\n• What was new or surprising?\n• What would you do differently in a real situation?"}
+                  className={cn(
+                    "flex-1 bg-transparent border-none shadow-none resize-none focus-visible:ring-0 p-0 text-lg font-hand text-black",
+                    "leading-[2.5rem]" // Increased line spacing for readability
+                  )}
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                 />
               </div>
               
-              {/* Attachment Preview */}
+              {/* Attachment Preview - Chips */}
               {attachment && (
-                <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded mt-2">
-                  <FileText className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm text-slate-700 truncate">{attachment.name}</span>
-                  <Button variant="ghost" size="icon" onClick={() => setAttachment(null)} className="h-6 w-6 ml-auto">
-                    <X className="w-3 h-3" />
-                  </Button>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="flex items-center gap-2 pl-3 pr-2 py-1.5 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-full transition-colors group">
+                    <Paperclip className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="text-sm font-medium text-slate-700 truncate max-w-[150px]">{attachment.name}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setAttachment(null)} 
+                      className="h-5 w-5 rounded-full ml-1 hover:bg-slate-300/50 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
               )}
 
               {/* DRAWING SECTION - Collapsible */}
               <div className="border-t border-slate-200 pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <button
-                    onClick={() => setShowDrawing(!showDrawing)}
-                    className="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-800 transition"
+                <div className="mb-4">
+                  <div 
+                    onClick={() => setShowDrawing(!showDrawing)} 
+                    className="cursor-pointer group flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-transparent hover:border-slate-200 transition-all select-none"
                   >
-                    {showDrawing ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                    {showDrawing ? 'Hide' : 'Show'} Drawing Tools
-                  </button>
+                    <div className="flex items-center gap-4">
+                       <div className="flex -space-x-2">
+                          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm group-hover:-translate-y-1 transition-transform"><Pencil className="w-4 h-4" /></div>
+                          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm group-hover:-translate-y-1 transition-transform delay-75"><Highlighter className="w-4 h-4" /></div>
+                          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm group-hover:-translate-y-1 transition-transform delay-150"><Eraser className="w-4 h-4" /></div>
+                       </div>
+                       <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                            {showDrawing ? "Hide Drawing Canvas" : "Sketch & Annotate"}
+                          </span>
+                          {!showDrawing && <span className="text-xs text-slate-500">Draw layouts, evacuation routes, or diagrams</span>}
+                       </div>
+                    </div>
+                    <ChevronDown className={cn("w-5 h-5 text-slate-400 transition-transform duration-300", showDrawing && "rotate-180")} />
+                  </div>
                 </div>
 
                 {showDrawing && (
@@ -462,6 +550,19 @@ export function Notepad({ title, content, onClose, mode, onSubmit }: NotepadProp
                       >
                         <ImageIcon className="w-3 h-3" /> Add Image
                       </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200" 
+                        onClick={() => {
+                          if(window.confirm('Clear entire drawing?')) {
+                            setDrawings([]);
+                            setImages([]);
+                          }
+                        }}
+                      >
+                        <Eraser className="w-3 h-3" /> Clear
+                      </Button>
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -481,7 +582,19 @@ export function Notepad({ title, content, onClose, mode, onSubmit }: NotepadProp
 
         {/* Footer */}
         {mode === 'write' && (
-          <div className="bg-red-50/30 border-t border-red-200 p-4 flex justify-end gap-2">
+          <div className="bg-slate-50/50 border-t border-slate-200 p-3 px-4 flex flex-col gap-3">
+             {/* Hints and Status */}
+             <div className="flex justify-between items-center text-xs text-slate-400 px-1">
+                <span>Images, PDFs, up to 10MB</span>
+                <span className="flex items-center gap-1.5 transition-opacity duration-500">
+                  {saveStatus === 'saving' && <>Saving...</>}
+                  {saveStatus === 'saved' && <>
+                    <Cloud className="w-3 h-3" /> Saved just now
+                  </>}
+                </span>
+             </div>
+
+             <div className="flex justify-between gap-2">
             {/* Attachment Button */}
             <input 
               type="file" 
@@ -495,12 +608,17 @@ export function Notepad({ title, content, onClose, mode, onSubmit }: NotepadProp
             
             <div className="flex-1"></div>
 
-            <Button variant="outline" onClick={onClose} className="text-xs">
+            <Button variant="outline" onClick={handleClose} className="text-xs">
               Cancel
             </Button>
-            <Button onClick={handleSubmit} className="gap-2 bg-black text-white hover:bg-[#7acc00] text-xs">
-              <Save className="w-4 h-4" /> Save Note
+            <Button 
+              onClick={handleSubmit} 
+              className="gap-2 bg-black text-white hover:bg-[#7acc00] text-xs transition-all disabled:opacity-50"
+              disabled={!text.trim() && !attachment && drawings.length === 0}
+            >
+              <Save className="w-3.5 h-3.5" /> Save Note
             </Button>
+             </div>
           </div>
         )}
       </div>

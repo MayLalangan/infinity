@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useRoute, useLocation } from 'wouter';
+import { useRoute, useLocation, Link } from 'wouter';
 import { Layout } from '@/components/layout';
 import { useTraining, ProgressStatus, type Subtopic } from '@/lib/store';
 import { Notepad } from '@/components/notepad';
@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, BookOpen, MessageSquare, CheckCircle2, Settings, GripVertical, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, MessageSquare, CheckCircle2, Settings, GripVertical, Plus, Trash2, ChevronRight, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from "@/hooks/use-toast";
 
 export default function TopicView() {
   const [, params] = useRoute('/topic/:id');
@@ -25,6 +26,7 @@ export default function TopicView() {
   const [isAddSubtopicOpen, setIsAddSubtopicOpen] = useState(false);
   const [newSubtopicTitle, setNewSubtopicTitle] = useState('');
 
+  const { toast } = useToast();
   const topic = topics.find(t => t.id === params?.id);
 
   if (!topic) return <div>Topic not found</div>;
@@ -98,16 +100,24 @@ export default function TopicView() {
     fully_understood: 'text-green-500',
   };
 
+  const statusBorderColors: Record<ProgressStatus, string> = {
+    not_addressed: 'border-l-slate-200',
+    basic: 'border-l-yellow-400',
+    good: 'border-l-blue-500',
+    fully_understood: 'border-l-green-500',
+  };
+
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-8">
-        <Button 
-          variant="ghost" 
-          className="gap-2 pl-0 hover:pl-2 transition-all text-white font-semibold hover:text-[#7acc00]" 
-          onClick={() => setLocation('/')}
-        >
-          <ArrowLeft className="w-5 h-5" /> Back to Modules
-        </Button>
+        <nav className="flex items-center text-sm mb-6">
+          <Link href="/" className="group flex items-center gap-2 text-white/80 hover:text-white transition-colors px-2 py-1.5 -ml-2 rounded-lg hover:bg-white/10">
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium">Modules</span>
+          </Link>
+          <ChevronRight className="w-4 h-4 text-white/40 mx-2" />
+          <span className="text-white font-bold tracking-wide">{topic.title}</span>
+        </nav>
 
         <div className="flex items-center gap-4">
           <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -126,92 +136,110 @@ export default function TopicView() {
           )}
         </div>
 
-        <div className="grid gap-6">
-          {topic.subtopics.map((subtopic, index) => (
-            <Card 
-              key={subtopic.id} 
-              className={cn(
-                "border-l-4 border-l-transparent hover:border-l-secondary transition-all duration-300 hover:shadow-md",
-                draggedIndex === index && "opacity-50"
-              )}
-              draggable={isAdmin}
-              onDragStart={() => handleDragStart(index)}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDrop={(e) => handleDrop(e, index)}
-              onDragEnd={handleDragEnd}
-            >
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
-                  {isAdmin && (
-                    <div className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-secondary transition-colors">
-                      <GripVertical className="w-5 h-5" />
-                    </div>
-                  )}
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-semibold">{subtopic.title}</h3>
-                      {isAdmin && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-50"
-                          onClick={() => handleDeleteSubtopic(subtopic.id)}
+        <div className="grid gap-8">
+          {topic.subtopics.map((subtopic, index) => {
+            const currentStatus = getStatus(subtopic.id);
+            return (
+              <Card 
+                key={subtopic.id} 
+                className={cn(
+                  "border-l-4 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 pl-1",
+                  statusBorderColors[currentStatus],
+                  draggedIndex === index && "opacity-50"
+                )}
+                draggable={isAdmin}
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+              >
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+                    {isAdmin && (
+                      <div className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-secondary transition-colors">
+                        <GripVertical className="w-5 h-5" />
+                      </div>
+                    )}
+                    <div className="space-y-3 flex-1">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-xl font-bold text-slate-800 tracking-tight">{subtopic.title}</h3>
+                        <div className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full text-xs font-semibold flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> ~15 min
+                        </div>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                            onClick={() => handleDeleteSubtopic(subtopic.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          className="gap-2 bg-[#005A9E] hover:bg-[#004a80] text-white border-0 shadow-sm transition-all hover:shadow-md"
+                          onClick={() => setActiveResource(subtopic.id)}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <BookOpen className="w-4 h-4" /> Resources ({subtopic.resourceLinks?.length || 0})
                         </Button>
-                      )}
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-2 hover:bg-[#7acc00] hover:text-white hover:border-[#7acc00] transition-colors"
-                        onClick={() => setActiveResource(subtopic.id)}
-                      >
-                        <BookOpen className="w-4 h-4" /> Resources
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-2 hover:bg-[#7acc00] hover:text-white hover:border-[#7acc00] transition-colors"
-                        onClick={() => setActiveComments(subtopic.id)}
-                      >
-                        <MessageSquare className="w-4 h-4" /> Notes & Comments ({subtopic.comments.length})
-                      </Button>
-                      {currentUser?.role === 'admin' && !viewAsUser && (
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="gap-2 border-secondary text-secondary hover:bg-secondary hover:text-white"
-                          onClick={() => setManageResourcesFor(subtopic.id)}
+                          className="gap-2 text-slate-600 border-slate-200 hover:border-[#005A9E] hover:text-[#005A9E] hover:bg-blue-50 transition-colors group"
+                          onClick={() => setActiveComments(subtopic.id)}
                         >
-                          <Settings className="w-4 h-4" /> Manage Resources
+                          <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-[#005A9E] transition-colors" /> 
+                          Notes & Comments ({subtopic.comments.length})
                         </Button>
-                      )}
+                        {currentUser?.role === 'admin' && !viewAsUser && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="gap-2 border-secondary text-secondary hover:bg-secondary hover:text-white"
+                            onClick={() => setManageResourcesFor(subtopic.id)}
+                          >
+                            <Settings className="w-4 h-4" /> Manage Resources
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="w-full md:w-auto flex flex-col gap-2 min-w-[200px]">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-muted-foreground">My Understanding</span>
+                        <span className="text-[10px] text-muted-foreground/70">Self-assessed after reviewing content</span>
+                      </div>
+                      <Select 
+                        value={currentStatus} 
+                        onValueChange={(val) => {
+                          updateProgress(subtopic.id, val as ProgressStatus);
+                          toast({
+                            description: "Understanding saved",
+                            duration: 2000,
+                            className: "bg-green-50 border-green-200 text-green-900", // Subtle success style
+                          });
+                        }}
+                      >
+                        <SelectTrigger className={cn("w-full transition-colors border-slate-200 hover:border-slate-300", statusColors[currentStatus])}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="not_addressed">Not Addressed</SelectItem>
+                          <SelectItem value="basic">Basic Understanding</SelectItem>
+                          <SelectItem value="good">Good Understanding</SelectItem>
+                          <SelectItem value="fully_understood">Fully Understood</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-
-                  <div className="w-full md:w-auto flex flex-col gap-2 min-w-[200px]">
-                    <span className="text-sm font-medium text-muted-foreground">My Understanding</span>
-                    <Select 
-                      value={getStatus(subtopic.id)} 
-                      onValueChange={(val) => updateProgress(subtopic.id, val as ProgressStatus)}
-                    >
-                      <SelectTrigger className={cn("w-full transition-colors", statusColors[getStatus(subtopic.id)])}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="not_addressed">Not Addressed</SelectItem>
-                        <SelectItem value="basic">Basic Understanding</SelectItem>
-                        <SelectItem value="good">Good Understanding</SelectItem>
-                        <SelectItem value="fully_understood">Fully Understood</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Resource Modal */}
