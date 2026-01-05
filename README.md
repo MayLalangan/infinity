@@ -1,118 +1,79 @@
-# InfinityTrain - Learning Tracker
+# Ocean Infinity Training - Employee Development Portal
 
-A comprehensive employee training and learning management system with progress tracking, collaborative comments, and rich resource management.
+A modern, high-fidelity training management system designed to track employee progress, facilitate learning through structured resources, and encourage reflection via a rich personal notepad.
 
-## Features
+## 🚀 Key Features
 
-- **Topic Management**: Organize training content into topics with customizable icons
-- **Subtopics & Resources**: Create detailed subtopics with markdown-based resources
-- **Progress Tracking**: Track employee understanding levels (Not Addressed, Basic, Good, Fully Understood)
-- **Collaborative Learning**: Add comments, images, and drawings to subtopics
-- **User Roles**: Admin and employee roles with appropriate permissions
-- **Persistent Storage**: SQLite database for reliable data persistence
+### 🎓 Learning Management
+- **Infinity Grid Navigation**: Unique, engaging home interface for exploring training topics.
+- **Topic & Subtopic View**: Structured breakdown of learning modules with progress tracking.
+- **Progress Tracking**: Self-assessment levels (**Not Addressed**, **Basic**, **Good**, **Fully Understood**) with visual cues.
+- **Resource Viewer**: Centralized hub for videos, PDF docs, and external links, featuring rich metadata and inline video playback.
 
-## Technology Stack
+### 📝 Personal Notepad
+A powerful reflection tool integrated into every subtopic:
+- **Private & Secure**: Notes are visible only to the learner.
+- **Rich Interaction**: 
+  - **Lined/Blank Paper Mode**: Toggleable writing surface for comfort.
+  - **Drawing Tools**: Integrated sketching canvas (Pencil, Highlighter, Eraser) for diagrams and evacuation routes.
+  - **Attachments**: Drag-and-drop support for images and PDFs.
+- **Auto-Save**: Real-time saving with status feedback ("Saved just now").
+- **Smart Prompts**: Contextual scaffolding questions (e.g., "What steps should you remember?") to guide reflection.
 
-- **Frontend**: React 19, TypeScript, Vite, TailwindCSS, Radix UI
-- **Backend**: Express.js, Node.js
-- **Database**: SQLite (better-sqlite3) - Zero config
+### 👥 User Roles & Administration
+- **Employee View**: Focus on personal progress, learning resources, and notes.
+- **Admin View**: Manage topics, subtopics, and view team progress.
 
-## Local Development
+## 🛠️ Technology Stack
 
-### Prerequisites
+- **Frontend**: React 19, TypeScript, Vite, TailwindCSS, Shadcn UI, Framer Motion
+- **Backend**: Node.js, Express.js
+- **Database**: PostgreSQL (via `pg`) / SQLite (fallback)
+- **Icons**: Lucide React
 
-- Node.js 20.x or higher
-- npm
+## 📦 Project Structure
 
-### Setup
+```
+├── client/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── infinity-grid.tsx    # Core navigation component
+│   │   │   ├── notepad.tsx          # Rich text & drawing editor
+│   │   │   ├── resource-viewer.tsx  # Media & link viewer
+│   │   │   └── ui/                  # Shadcn UI primitives
+│   │   ├── pages/                   # Route components (Topic, Home)
+│   │   └── lib/                     # State management (store.ts)
+├── server/
+│   ├── routes.ts                    # API Route definitions
+│   └── postgres-storage.ts          # Database adapter
+└── uploads/                         # User-uploaded content
+```
 
-1. Clone the repository:
+## 🚀 Local Development
+
+1. **Clone & Install**
    ```bash
-   git clone <your-repo-url>
+   git clone <repo-url>
    cd Infinitytrain3
-   ```
-
-2. Install dependencies:
-   ```bash
    npm install
    ```
 
-3. Start the development server:
+2. **Database Setup**
+   Ensure PostgreSQL is running and update `.env` with your `DATABASE_URL`.
+   ```bash
+   # Example .env
+   DATABASE_URL=postgres://user:pass@localhost:5432/infinitytrain
+   ```
+
+3. **Start Development Server**
    ```bash
    npm run dev
    ```
-   
-   This will start both the backend API and the Vite dev server. The application will be available at `http://localhost:5000`.
+   Access the app at `http://localhost:5000`.
 
-### Development Scripts
+## 🧪 Demo Accounts
 
-- `npm run dev` - Start development server with hot reload
-- `npm run dev:client` - Start only the Vite client dev server
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm run check` - Run TypeScript type checking
+- **Admin**: `admin@oceaninfinity.com`
+- **Employees**: `may@oceaninfinity.com`, `adam@oceaninfinity.com`
+  (Use the **"View As"** feature in the user dropdown to simulate different roles)
 
-## Database Storage
-
-- **Local Development**: PostgreSQL
-- **Configuration**: Set `DATABASE_URL` in `.env` file (e.g., `postgres://user:password@localhost:5432/infinitytrain`)
-
-
-## Default Users
-
-The application comes with pre-configured demo users:
-
-- **Admin**: admin@oceaninfinity.com
-- **Employee**: may@oceaninfinity.com
-- **Employee**: adam@oceaninfinity.com
-- **Employee**: chris@oceaninfinity.com
-- **Employee**: arta@oceaninfinity.com
-- **Employee**: enya@oceaninfinity.com
-
-## Project Structure
-
-```
-├── client/                 # Frontend React application
-│   ├── src/
-│   │   ├── components/    # Reusable UI components
-│   │   ├── pages/         # Page components
-│   │   ├── hooks/         # Custom React hooks
-│   │   └── lib/           # Utilities and store
-│   └── public/            # Static assets
-├── server/                 # Backend Express application
-│   ├── app.ts             # Express app setup
-│   ├── routes.ts          # API routes
-│   ├── sqlite-storage.ts  # Database layer
-│   └── index-prod.ts      # Production entry point
-├── render.yaml            # Render deployment config
-└── package.json           # Dependencies and scripts
-```
-
-## API Endpoints
-
-### Topics
-- `GET /api/topics` - Get all topics
-- `POST /api/topics` - Create a new topic
-- `PUT /api/topics/:id` - Update a topic
-- `DELETE /api/topics/:id` - Soft delete a topic
-- `POST /api/topics/:id/restore` - Restore a deleted topic
-
-### Progress
-- `GET /api/progress/:userId` - Get user progress
-- `POST /api/progress` - Save progress update
-
-### Users
-- `GET /api/users/:id` - Get user by ID
-
-### Comments
-- `POST /api/comments` - Add a comment to a subtopic
-
-
-
-## Support & Issues
-
-For issues, feature requests, or contributions, please open an issue in the GitHub repository.
-
-## License
-
-MIT
